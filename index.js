@@ -1,4 +1,3 @@
-
 'use strict';
 
 let element_filechooser = undefined; // input
