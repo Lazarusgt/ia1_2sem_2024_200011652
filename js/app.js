@@ -51,7 +51,16 @@ function loadFile() {
 // Función para convertir el texto CSV en una matriz
 function parseCSV(text) {
     const rows = text.trim().split("\n");
-    return rows.map(row => row.split(",").map(Number));
+    const parsedData = rows.map(row => row.split(",").map(Number));
+    
+    // Validación: confirmar que no haya NaN en los datos
+    for (let i = 0; i < parsedData.length; i++) {
+        if (parsedData[i].some(isNaN)) {
+            document.getElementById("log").innerHTML = "Error: Archivo CSV contiene datos no numéricos.";
+            return [];
+        }
+    }
+    return parsedData;
 }
 
 // Función para entrenar el modelo
@@ -97,15 +106,17 @@ function showChart() {
 
 // Función para dibujar la gráfica
 function drawChart(dataArray) {
-    const data = google.visualization.arrayToDataTable(dataArray);
-    const options = {
-        title: 'Regresión Lineal',
-        hAxis: { title: 'X' },
-        vAxis: { title: 'Y' },
-        seriesType: 'scatter',
-        series: { 1: { type: 'line' } }
-    };
+    google.charts.setOnLoadCallback(function() {
+        const data = google.visualization.arrayToDataTable(dataArray);
+        const options = {
+            title: 'Regresión Lineal',
+            hAxis: { title: 'X' },
+            vAxis: { title: 'Y' },
+            seriesType: 'scatter',
+            series: { 1: { type: 'line' } }
+        };
 
-    const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
-    chart.draw(data, options);
+        const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+    });
 }
