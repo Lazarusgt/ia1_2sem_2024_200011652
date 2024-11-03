@@ -1,83 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Regresión Lineal con Gráfica</title>
-    <script type="text/javascript" src="path_to_your_js_folder/tytus.js"></script> <!-- Asegúrate de que el path sea correcto -->
+    <title>Modelos de Machine Learning</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
 </head>
 <body>
-    <h2>Regresión Lineal</h2>
-    <p id="log"></p>    
+    <h2>Seleccione el Modelo y Cargue un Archivo CSV</h2>
+    
+    <!-- Selector de archivos CSV -->
+    <input type="file" id="fileInput" accept=".csv">
+    
+    <!-- Menú de selección de modelos -->
+    <select id="modelSelect">
+        <option value="linearRegression">Regresión Lineal</option>
+        <!-- Puedes agregar más modelos aquí en el futuro -->
+    </select>
+    
+    <!-- Botón para ejecutar la predicción -->
+    <button onclick="runModel()">Ejecutar Modelo</button>
+    
+    <p id="log"></p>
     <div id="chart_div" style="width: 900px; height: 500px;"></div>
-
-    <script type="text/javascript">
-        // Datos de entrenamiento
-        const xTrain = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-        const yTrain = [1, 4, 1, 5, 3, 7, 2, 7, 4, 9];
-
-        // Crear una instancia del modelo de Regresión Lineal y entrenarlo
-        class LinearRegression {
-            constructor() {
-                this.m = 0;
-                this.b = 0;
-            }
-
-            fit(xTrain, yTrain) {
-                const n = xTrain.length;
-                let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-
-                // Sumar los valores necesarios para el cálculo de m y b
-                for (let i = 0; i < n; i++) {
-                    sumX += xTrain[i];
-                    sumY += yTrain[i];
-                    sumXY += xTrain[i] * yTrain[i];
-                    sumXX += xTrain[i] * xTrain[i];
-                }
-
-                this.m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-                this.b = (sumY * sumXX - sumX * sumXY) / (n * sumXX - sumX * sumX);
-            }
-
-            predict(xValues) {
-                return xValues.map(x => this.m * x + this.b);
-            }
-        }
-
-        // Entrenar el modelo y hacer una predicción
-        const linear = new LinearRegression();
-        linear.fit(xTrain, yTrain);
-        const yPredict = linear.predict(xTrain);
-
-        // Mostrar resultados en la página
-        document.getElementById("log").innerHTML = `
-            <b>X Train:</b> ${xTrain}<br>
-            <b>Y Train:</b> ${yTrain}<br>
-            <b>Y Predict:</b> ${yPredict}
-        `;
-
-        // Preparar datos para graficar
-        const data = [['X', 'Y Real', 'Y Predicción']];
-        for (let i = 0; i < xTrain.length; i++) {
-            data.push([xTrain[i], yTrain[i], yPredict[i]]);
-        }
-
-        // Cargar Google Charts y dibujar la gráfica
-        google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(drawChart);
-
-        function drawChart() {
-            const chartData = google.visualization.arrayToDataTable(data);
-            const options = {
-                title: 'Regresión Lineal',
-                hAxis: { title: 'X' },
-                vAxis: { title: 'Y' },
-                seriesType: 'scatter',
-                series: {1: {type: 'line'}}
-            };
-
-            const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
-            chart.draw(chartData, options);
-        }
-    </script>
 </body>
 </html>
