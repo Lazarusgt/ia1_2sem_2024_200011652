@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>Modelos de Machine Learning</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
@@ -12,14 +13,35 @@
     <input type="file" id="fileInput" accept=".csv">
     
     <!-- Menú de selección de modelos -->
+    <label for="modelSelect">Seleccione el modelo:</label>
     <select id="modelSelect">
         <option value="linearRegression">Regresión Lineal</option>
         <!-- Puedes agregar más modelos aquí en el futuro -->
     </select>
+
+    <!-- Opciones de parametrización -->
+    <label for="trainPercentage">Porcentaje de Train Data:</label>
+    <input type="number" id="trainPercentage" placeholder="Ej. 80">
     
-    <!-- Botón para ejecutar la predicción -->
-    <button onclick="runModel()">Ejecutar Modelo</button>
+    <label for="objective">Objetivo:</label>
+    <select id="objective">
+        <option value="prediccion">Predicción</option>
+        <option value="clasificacion">Clasificación</option>
+    </select>
+
+    <!-- Otros parámetros (dependerán del tipo de modelo) -->
+    <label for="xRange">Nuevo Rango en el Eje X:</label>
+    <input type="text" id="xRange" placeholder="Ej. 0,1,2,...">
     
+    <label for="numClasses">Número de Clases:</label>
+    <input type="number" id="numClasses" placeholder="Ej. 3" min="1">
+
+    <!-- Botones para las operaciones -->
+    <button onclick="trainModel()">Entrenar</button>
+    <button onclick="predict()">Predicción</button>
+    <button onclick="showGraph()">Mostrar Gráficas</button>
+
+    <!-- Sección de log y gráfica -->
     <p id="log"></p>
     <div id="chart_div" style="width: 900px; height: 500px;"></div>
 </body>
