@@ -1,4 +1,24 @@
 // app.js
+
+// Función para leer el archivo CSV
+function readCSVFile(file, callback) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const text = event.target.result;
+        const data = parseCSV(text);
+        callback(data);
+    };
+    reader.readAsText(file);
+}
+
+// Función para convertir el texto CSV en datos de matriz
+function parseCSV(text) {
+    const rows = text.trim().split("\n");
+    const data = rows.map(row => row.split(",").map(Number));
+    return data;
+}
+
+// Clase de Regresión Lineal
 class LinearRegression {
     constructor() {
         this.m = 0;
@@ -25,32 +45,45 @@ class LinearRegression {
     }
 }
 
-// Entrenar y predecir
-const xTrain = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-const yTrain = [1, 4, 1, 5, 3, 7, 2, 7, 4, 9];
-const linear = new LinearRegression();
-linear.fit(xTrain, yTrain);
-const yPredict = linear.predict(xTrain);
+// Función para ejecutar el modelo seleccionado
+function runModel() {
+    const fileInput = document.getElementById("fileInput").files[0];
+    const modelSelect = document.getElementById("modelSelect").value;
 
-// Mostrar resultados
-document.getElementById("log").innerHTML = `
-    <b>X Train:</b> ${xTrain}<br>
-    <b>Y Train:</b> ${yTrain}<br>
-    <b>Y Predict:</b> ${yPredict}
-`;
+    if (modelSelect === "linearRegression" && fileInput) {
+        readCSVFile(fileInput, (data) => {
+            const xTrain = data.map(row => row[0]); // Suponemos que la primera columna es X
+            const yTrain = data.map(row => row[1]); // Suponemos que la segunda columna es Y
 
-// Preparar datos para graficar
-const data = [['X', 'Y Real', 'Y Predicción']];
-for (let i = 0; i < xTrain.length; i++) {
-    data.push([xTrain[i], yTrain[i], yPredict[i]]);
+            const linear = new LinearRegression();
+            linear.fit(xTrain, yTrain);
+
+            const yPredict = linear.predict(xTrain);
+
+            // Mostrar resultados en el log
+            document.getElementById("log").innerHTML = `
+                <b>X Train:</b> ${xTrain}<br>
+                <b>Y Train:</b> ${yTrain}<br>
+                <b>Y Predict:</b> ${yPredict}
+            `;
+
+            // Preparar datos para graficar
+            const chartData = [['X', 'Y Real', 'Y Predicción']];
+            for (let i = 0; i < xTrain.length; i++) {
+                chartData.push([xTrain[i], yTrain[i], yPredict[i]]);
+            }
+
+            // Dibujar la gráfica
+            drawChart(chartData);
+        });
+    } else {
+        alert("Por favor, seleccione un archivo CSV y un modelo válido.");
+    }
 }
 
-// Cargar Google Charts y dibujar la gráfica
-google.charts.load('current', {'packages':['corechart']});
-google.charts.setOnLoadCallback(drawChart);
-
-function drawChart() {
-    const chartData = google.visualization.arrayToDataTable(data);
+// Función para dibujar la gráfica
+function drawChart(dataArray) {
+    const data = google.visualization.arrayToDataTable(dataArray);
     const options = {
         title: 'Regresión Lineal',
         hAxis: { title: 'X' },
@@ -60,5 +93,5 @@ function drawChart() {
     };
 
     const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
-    chart.draw(chartData, options);
+    chart.draw(data, options);
 }
