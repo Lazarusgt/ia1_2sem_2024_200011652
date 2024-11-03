@@ -1,129 +1,101 @@
-// app.js
+// Variables globales para almacenar datos
+let xTrain = [];
+let yTrain = [];
 
-// Cargar la API de gráficos de Google
-google.charts.load('current', {'packages':['corechart']});
+// Función para leer el archivo CSV
+function loadFile() {
+    const input = document.getElementById('fileInput');
+    const file = input.files[0];
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const content = e.target.result;
+        const data = content.split('\n').map(row => row.split(',').map(Number));
+        
+        // Asume que los datos son numéricos y están en el formato [x, y]
+        xTrain = data.map(row => row[0]);
+        yTrain = data.map(row => row[1]);
+        
+        document.getElementById("output").innerHTML = "Archivo cargado con éxito.";
+    };
+    reader.readAsText(file);
+}
+
+// Clase para Regresión Lineal
 class LinearRegression {
     constructor() {
         this.m = 0;
         this.b = 0;
     }
 
-    fit(xTrain, yTrain) {
-        const n = xTrain.length;
-        let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    fit(x, y) {
+        const n = x.length;
+        const xMean = x.reduce((sum, val) => sum + val, 0) / n;
+        const yMean = y.reduce((sum, val) => sum + val, 0) / n;
 
-        for (let i = 0; i < n; i++) {
-            sumX += xTrain[i];
-            sumY += yTrain[i];
-            sumXY += xTrain[i] * yTrain[i];
-            sumXX += xTrain[i] * xTrain[i];
-        }
+        const num = x.reduce((sum, val, i) => sum + (val - xMean) * (y[i] - yMean), 0);
+        const den = x.reduce((sum, val) => sum + Math.pow(val - xMean, 2), 0);
 
-        this.m = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        this.b = (sumY * sumXX - sumX * sumXY) / (n * sumXX - sumX * sumX);
+        this.m = num / den;
+        this.b = yMean - this.m * xMean;
     }
 
-    predict(xValues) {
-        return xValues.map(x => this.m * x + this.b);
+    predict(x) {
+        return x.map(val => this.m * val + this.b);
     }
 }
 
-let loadedData = [];
-let linearRegressionModel;
-
-// Función para leer el archivo CSV
-function loadFile() {
-    const fileInput = document.getElementById("fileInput").files[0];
-    if (fileInput) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const text = event.target.result;
-            loadedData = parseCSV(text);
-            document.getElementById("log").innerHTML = "Archivo cargado exitosamente.";
-        };
-        reader.readAsText(fileInput);
-    } else {
-        alert("Seleccione un archivo CSV para cargar.");
-    }
-}
-
-// Función para convertir el texto CSV en una matriz
-function parseCSV(text) {
-    const rows = text.trim().split("\n");
-    const parsedData = rows.map(row => row.split(",").map(Number));
-    
-    // Validación: confirmar que no haya NaN en los datos
-    for (let i = 0; i < parsedData.length; i++) {
-        if (parsedData[i].some(isNaN)) {
-            document.getElementById("log").innerHTML = "Error: Archivo CSV contiene datos no numéricos.";
-            return [];
-        }
-    }
-    return parsedData;
-}
-
-// Función para entrenar el modelo
 function trainModel() {
-    const modelSelect = document.getElementById("modelSelect").value;
-    if (modelSelect === "linearRegression" && loadedData.length > 0) {
-        const xTrain = loadedData.map(row => row[0]);
-        const yTrain = loadedData.map(row => row[1]);
-
-        linearRegressionModel = new LinearRegression();
-        linearRegressionModel.fit(xTrain, yTrain);
-
-        // Guardamos predicciones para usar en la gráfica
-        window.xTrain = xTrain;
-        window.yTrain = yTrain;
-        window.yPredict = linearRegressionModel.predict(xTrain);
-
-        document.getElementById("log").innerHTML = `
-            Modelo entrenado exitosamente.<br>
-            X Train: ${xTrain}<br>
-            Y Train: ${yTrain}<br>
-            Y Predicción: ${window.yPredict}
-        `;
-    } else {
-        alert("Seleccione un archivo CSV y el modelo 'Regresión Lineal' para entrenar.");
+    const model = document.getElementById("modelSelect").value;
+    
+    if (model === "linearRegression") {
+        const linear = new LinearRegression();
+        linear.fit(xTrain, yTrain);
+        const yPredict = linear.predict(xTrain);
+        
+        document.getElementById("output").innerHTML = `Modelo Entrenado con éxito.
+            <br>X Train: ${xTrain.join(',')}
+            <br>Y Train: ${yTrain.join(',')}
+            <br>Y Predicción: ${yPredict.join(',')}`;
+    } else if (model === "kMeans") {
+        trainKMeans();
     }
 }
 
-// Función para mostrar la gráfica
-function showChart() {
-    if (!window.xTrain || !window.yPredict) {
-        alert("Debe entrenar el modelo antes de mostrar la gráfica.");
-        return;
+function showGraph() {
+    const model = document.getElementById("modelSelect").value;
+    if (model === "linearRegression") {
+        showLinearGraph();
+    } else if (model === "kMeans") {
+        showKMeansGraph();
     }
-
-    const chartData = [['X', 'Y Real', 'Y Predicción']];
-    for (let i = 0; i < window.xTrain.length; i++) {
-        chartData.push([window.xTrain[i], window.yTrain[i], window.yPredict[i]]);
-    }
-
-    drawChart(chartData);
 }
 
-// Función para dibujar la gráfica
-function drawChart(dataArray) {
-    google.charts.setOnLoadCallback(function() {
-        const data = google.visualization.arrayToDataTable(dataArray);
+function showLinearGraph() {
+    const linear = new LinearRegression();
+    linear.fit(xTrain, yTrain);
+    const yPredict = linear.predict(xTrain);
+
+    const chartData = [["X", "Y", "Predicción"]];
+    for (let i = 0; i < xTrain.length; i++) {
+        chartData.push([xTrain[i], yTrain[i], yPredict[i]]);
+    }
+
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(() => {
+        const dataTable = google.visualization.arrayToDataTable(chartData);
         const options = {
-            title: 'Regresión Lineal',
-            hAxis: { title: 'X' },
-            vAxis: { title: 'Y' },
-            seriesType: 'scatter',
-            series: { 1: { type: 'line' } }
+            title: "Regresión Lineal",
+            seriesType: "scatter",
+            series: {1: {type: "line"}}
         };
-
-        const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
+        const chart = new google.visualization.ComboChart(document.getElementById("chart_div"));
+        chart.draw(dataTable, options);
     });
 }
 
-
-/////////////////////////icicio//h-means//////////////////////////////
-
+// Implementación de K-Means
 class KMeans {
     constructor(k) {
         this.k = k;
@@ -131,7 +103,6 @@ class KMeans {
     }
 
     initializeCentroids(data) {
-        // Inicializa los centroides aleatoriamente
         for (let i = 0; i < this.k; i++) {
             const randomPoint = data[Math.floor(Math.random() * data.length)];
             this.centroids.push([...randomPoint]);
@@ -182,16 +153,15 @@ class KMeans {
 }
 
 function trainKMeans() {
-    const data = getDataFromCSV();
-    const k = 3; // Cambia la cantidad de clusters según sea necesario
-    const kmeans = new KMeans(k);
+    const data = xTrain.map((x, i) => [x, yTrain[i]]);
+    const kmeans = new KMeans(3);
     const clusters = kmeans.fit(data);
 
-    document.getElementById("output").innerHTML = `<p>Clústeres asignados: ${clusters.join(", ")}</p>`;
+    document.getElementById("output").innerHTML = `K-means Entrenado con éxito.<br>Clústeres: ${clusters.join(", ")}`;
 }
 
 function showKMeansGraph() {
-    const data = getDataFromCSV();
+    const data = xTrain.map((x, i) => [x, yTrain[i]]);
     const kmeans = new KMeans(3);
     const clusters = kmeans.fit(data);
 
@@ -207,6 +177,3 @@ function showKMeansGraph() {
         chart.draw(dataTable, options);
     });
 }
-
-
-///////////////////////////fin//k-means////////////////////////////////
