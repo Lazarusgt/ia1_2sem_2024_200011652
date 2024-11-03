@@ -14,8 +14,7 @@ function readCSVFile(file, callback) {
 // Función para convertir el texto CSV en datos de matriz
 function parseCSV(text) {
     const rows = text.trim().split("\n");
-    const data = rows.map(row => row.split(",").map(Number));
-    return data;
+    return rows.map(row => row.split(",").map(Number));
 }
 
 // Clase de Regresión Lineal
@@ -45,40 +44,53 @@ class LinearRegression {
     }
 }
 
-// Función para ejecutar el modelo seleccionado
-function runModel() {
+let loadedData = [];
+
+// Función para entrenar el modelo
+function trainModel() {
     const fileInput = document.getElementById("fileInput").files[0];
     const modelSelect = document.getElementById("modelSelect").value;
 
     if (modelSelect === "linearRegression" && fileInput) {
         readCSVFile(fileInput, (data) => {
-            const xTrain = data.map(row => row[0]); // Suponemos que la primera columna es X
-            const yTrain = data.map(row => row[1]); // Suponemos que la segunda columna es Y
+            loadedData = data;
+            const xTrain = data.map(row => row[0]);
+            const yTrain = data.map(row => row[1]);
 
             const linear = new LinearRegression();
             linear.fit(xTrain, yTrain);
 
-            const yPredict = linear.predict(xTrain);
+            // Guardamos la predicción para mostrar en la gráfica después
+            window.yPredict = linear.predict(xTrain);
+            window.xTrain = xTrain;
+            window.yTrain = yTrain;
 
-            // Mostrar resultados en el log
+            // Log de entrenamiento
             document.getElementById("log").innerHTML = `
+                <b>Modelo Entrenado con éxito.</b><br>
                 <b>X Train:</b> ${xTrain}<br>
                 <b>Y Train:</b> ${yTrain}<br>
-                <b>Y Predict:</b> ${yPredict}
+                <b>Y Predicción:</b> ${window.yPredict}
             `;
-
-            // Preparar datos para graficar
-            const chartData = [['X', 'Y Real', 'Y Predicción']];
-            for (let i = 0; i < xTrain.length; i++) {
-                chartData.push([xTrain[i], yTrain[i], yPredict[i]]);
-            }
-
-            // Dibujar la gráfica
-            drawChart(chartData);
         });
     } else {
-        alert("Por favor, seleccione un archivo CSV y un modelo válido.");
+        alert("Seleccione un archivo CSV y un modelo válido para entrenar.");
     }
+}
+
+// Función para mostrar la gráfica
+function showGraph() {
+    if (!window.xTrain || !window.yPredict) {
+        alert("Debe entrenar el modelo antes de mostrar la gráfica.");
+        return;
+    }
+
+    const chartData = [['X', 'Y Real', 'Y Predicción']];
+    for (let i = 0; i < window.xTrain.length; i++) {
+        chartData.push([window.xTrain[i], window.yTrain[i], window.yPredict[i]]);
+    }
+
+    drawChart(chartData);
 }
 
 // Función para dibujar la gráfica
@@ -89,7 +101,7 @@ function drawChart(dataArray) {
         hAxis: { title: 'X' },
         vAxis: { title: 'Y' },
         seriesType: 'scatter',
-        series: {1: {type: 'line'}}
+        series: { 1: { type: 'line' } }
     };
 
     const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
