@@ -1,23 +1,8 @@
 // app.js
 
-// Función para leer el archivo CSV
-function readCSVFile(file, callback) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const text = event.target.result;
-        const data = parseCSV(text);
-        callback(data);
-    };
-    reader.readAsText(file);
-}
+// Cargar la API de gráficos de Google
+google.charts.load('current', {'packages':['corechart']});
 
-// Función para convertir el texto CSV en datos de matriz
-function parseCSV(text) {
-    const rows = text.trim().split("\n");
-    return rows.map(row => row.split(",").map(Number));
-}
-
-// Clase de Regresión Lineal
 class LinearRegression {
     constructor() {
         this.m = 0;
@@ -45,41 +30,58 @@ class LinearRegression {
 }
 
 let loadedData = [];
+let linearRegressionModel;
+
+// Función para leer el archivo CSV
+function loadFile() {
+    const fileInput = document.getElementById("fileInput").files[0];
+    if (fileInput) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const text = event.target.result;
+            loadedData = parseCSV(text);
+            document.getElementById("log").innerHTML = "Archivo cargado exitosamente.";
+        };
+        reader.readAsText(fileInput);
+    } else {
+        alert("Seleccione un archivo CSV para cargar.");
+    }
+}
+
+// Función para convertir el texto CSV en una matriz
+function parseCSV(text) {
+    const rows = text.trim().split("\n");
+    return rows.map(row => row.split(",").map(Number));
+}
 
 // Función para entrenar el modelo
 function trainModel() {
-    const fileInput = document.getElementById("fileInput").files[0];
     const modelSelect = document.getElementById("modelSelect").value;
+    if (modelSelect === "linearRegression" && loadedData.length > 0) {
+        const xTrain = loadedData.map(row => row[0]);
+        const yTrain = loadedData.map(row => row[1]);
 
-    if (modelSelect === "linearRegression" && fileInput) {
-        readCSVFile(fileInput, (data) => {
-            loadedData = data;
-            const xTrain = data.map(row => row[0]);
-            const yTrain = data.map(row => row[1]);
+        linearRegressionModel = new LinearRegression();
+        linearRegressionModel.fit(xTrain, yTrain);
 
-            const linear = new LinearRegression();
-            linear.fit(xTrain, yTrain);
+        // Guardamos predicciones para usar en la gráfica
+        window.xTrain = xTrain;
+        window.yTrain = yTrain;
+        window.yPredict = linearRegressionModel.predict(xTrain);
 
-            // Guardamos la predicción para mostrar en la gráfica después
-            window.yPredict = linear.predict(xTrain);
-            window.xTrain = xTrain;
-            window.yTrain = yTrain;
-
-            // Log de entrenamiento
-            document.getElementById("log").innerHTML = `
-                <b>Modelo Entrenado con éxito.</b><br>
-                <b>X Train:</b> ${xTrain}<br>
-                <b>Y Train:</b> ${yTrain}<br>
-                <b>Y Predicción:</b> ${window.yPredict}
-            `;
-        });
+        document.getElementById("log").innerHTML = `
+            Modelo entrenado exitosamente.<br>
+            X Train: ${xTrain}<br>
+            Y Train: ${yTrain}<br>
+            Y Predicción: ${window.yPredict}
+        `;
     } else {
-        alert("Seleccione un archivo CSV y un modelo válido para entrenar.");
+        alert("Seleccione un archivo CSV y el modelo 'Regresión Lineal' para entrenar.");
     }
 }
 
 // Función para mostrar la gráfica
-function showGraph() {
+function showChart() {
     if (!window.xTrain || !window.yPredict) {
         alert("Debe entrenar el modelo antes de mostrar la gráfica.");
         return;
